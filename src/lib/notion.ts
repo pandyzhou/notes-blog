@@ -22,18 +22,64 @@ export const SITE = {
 };
 
 const token = import.meta.env.NOTION_TOKEN;
-const dataSourceId = import.meta.env.NOTION_DATA_SOURCE_ID;
+const explicitDataSourceId = import.meta.env.NOTION_DATA_SOURCE_ID;
+const databaseId = import.meta.env.NOTION_DATABASE_ID;
 
-if (!token || !dataSourceId) {
+if (!token) {
   throw new Error(
-    "\u7f3a\u5c11\u73af\u5883\u53d8\u91cf NOTION_TOKEN \u6216 NOTION_DATA_SOURCE_ID\u3002\n" +
-      "\u672c\u5730\u5f00\u53d1\uff1a\u628a .env.example \u590d\u5236\u4e3a .env \u5e76\u586b\u5165\u503c\u3002\n" +
-      "\u7ebf\u4e0a\u90e8\u7f72\uff1a\u5728\u5e73\u53f0\u7684\u73af\u5883\u53d8\u91cf\u8bbe\u7f6e\u91cc\u6dfb\u52a0\u3002"
+    "\u7f3a\u5c11\u73af\u5883\u53d8\u91cf NOTION_TOKEN\u3002\u672c\u5730\u5f00\u53d1\u653e\u5728 .env\uff0c\u7ebf\u4e0a\u653e\u5728\u90e8\u7f72\u5e73\u53f0\u7684\u73af\u5883\u53d8\u91cf\u91cc\u3002"
+  );
+}
+
+if (!explicitDataSourceId && !databaseId) {
+  throw new Error(
+    "\u8bf7\u8bbe\u7f6e NOTION_DATABASE_ID\uff08\u63a8\u8350\uff0c\u4ece Notion \u6570\u636e\u5e93\u9875\u9762\u7684\u7f51\u5740\u91cc\u590d\u5236\uff09\uff0c\u6216\u8005 NOTION_DATA_SOURCE_ID\u3002"
   );
 }
 
 const notion = new Client({ auth: token });
 const n2m = new NotionToMarkdown({ notionClient: notion });
+
+/** 把带连字符或不带连字符的 32 位 ID 统一成标准 UUID */
+function normalizeId(raw: string): string {
+  const hex = raw.trim().replace(/[^0-9a-fA-F]/g, "");
+  if (hex.length !== 32) return raw.trim();
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join("-");
+}
+
+let dataSourcePromise: Promise<string> | null = null;
+
+/**
+ * 优先用显式配置的 data source ID；
+ * 否则用 database ID 向 Notion 查一次，自动拿到第一个 data source。
+ */
+function getDataSourceId(): Promise<string> {
+  if (dataSourcePromise) return dataSourcePromise;
+
+  dataSourcePromise = (async () => {
+    if (explicitDataSourceId) return normalizeId(explicitDataSourceId);
+
+    const db: any = await notion.databases.retrieve({
+      database_id: normalizeId(databaseId!),
+    });
+    const id = db?.data_sources?.[0]?.id;
+
+    if (!id) {
+      throw new Error(
+        "\u65e0\u6cd5\u4ece\u8be5\u6570\u636e\u5e93\u89e3\u6790\u51fa data source\u3002\u8bf7\u786e\u8ba4 NOTION_DATABASE_ID \u6b63\u786e\uff0c\u4e14\u5df2\u5c06\u96c6\u6210\u8fde\u63a5\u5230\u8be5\u6570\u636e\u5e93\u3002"
+      );
+    }
+    return id;
+  })();
+
+  return dataSourcePromise;
+}
 
 export type Post = {
   id: string;
@@ -65,6 +111,7 @@ let cache: Post[] | null = null;
 export async function getPublishedPosts(): Promise<Post[]> {
   if (cache) return cache;
 
+  const dataSourceId = await getDataSourceId();
   const posts: Post[] = [];
   let cursor: string | undefined;
 
