@@ -1,0 +1,64 @@
+---
+import { marked } from "marked";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  getPublishedPosts,
+  getPostMarkdown,
+  formatDate,
+  tagSlug,
+  type Post,
+} from "../../lib/notion";
+
+export async function getStaticPaths() {
+  const posts = await getPublishedPosts();
+
+  return Promise.all(
+    posts.map(async (post) => {
+      const md = await getPostMarkdown(post.id);
+      return {
+        params: { slug: post.slug },
+        props: { post, html: marked.parse(md) as string },
+      };
+    })
+  );
+}
+
+interface Props {
+  post: Post;
+  html: string;
+}
+const { post, html } = Astro.props;
+---
+
+<BaseLayout title={post.title} description={post.summary || post.title}>
+  <div class="wrap">
+    <div class="article-head">
+      {
+        post.date && (
+          <div class="post-meta">
+            <time datetime={post.date}>{formatDate(post.date)}</time>
+          </div>
+        )
+      }
+      <h1>{post.title}</h1>
+      {post.summary && <p class="lede">{post.summary}</p>}
+      {
+        post.tags.length > 0 && (
+          <div class="tag-row">
+            {post.tags.map((t) => (
+              <a class="tag" href={`/tags/${tagSlug(t)}/`}>
+                {t}
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <article class="prose" set:html={html} />
+
+    <div class="article-foot">
+      <a class="back-link" href="/">← 返回全部文章</a>
+    </div>
+  </div>
+</BaseLayout>

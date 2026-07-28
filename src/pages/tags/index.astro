@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getPublishedPosts, tagSlug } from "../../lib/notion";
+
+const posts = await getPublishedPosts();
+const counts = new Map<string, number>();
+
+for (const post of posts) {
+  for (const tag of post.tags) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+
+const tags = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="标签" description="按主题浏览全部文章">
+  <section class="hero">
+    <div class="wrap">
+      <h1>标签</h1>
+      <p>按主题浏览全部文章。</p>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <p class="section-title">共 {tags.length} 个标签</p>
+    {
+      tags.length === 0 ? (
+        <div class="empty">还没有标签。在 Notion 里给文章加上标签即可。</div>
+      ) : (
+        <div class="tag-row" style="margin-top:16px">
+          {tags.map(([tag, count]) => (
+            <a class="tag" href={`/tags/${tagSlug(tag)}/`}>
+              {tag}
+              <span class="tag-count">{count}</span>
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

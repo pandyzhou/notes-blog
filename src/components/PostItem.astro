@@ -1,0 +1,21 @@
+---
+import { formatDate, tagSlug, type Post } from "../lib/notion";
+
+interface Props {
+  post: Post;
+}
+const { post } = Astro.props;
+---
+
+<li class="post-item">
+  <a class="post-link" href={`/posts/${post.slug}/`}>
+    <div class="post-meta">
+      {post.featured && <span class="pin">置顶</span>}
+      {post.date && <time datetime={post.date}>{formatDate(post.date)}</time>}
+      {post.tags.length > 0 && <span>·</span>}
+      {post.tags.slice(0, 3).map((t) => <span>{t}</span>)}
+    </div>
+    <h2 class="post-title">{post.title}</h2>
+    {post.summary && <p class="post-summary">{post.summary}</p>}
+  </a>
+</li>
