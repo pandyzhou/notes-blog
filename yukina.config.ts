@@ -3,14 +3,14 @@ import type { Configuration } from "./src/types/config";
 
 const YukinaConfig: Configuration = {
   title: "技术笔记",
-  subTitle: "记录开发过程中的踩坑、思考和工具折腾。",
+  subTitle: "记录开发过程中的踩坑、思考和工具折腾",
   brandTitle: "技术笔记",
 
   description: "记录开发过程中的踩坑、思考和工具折腾。",
 
   site: "https://notes-blog.pages.dev",
 
-  locale: "zh-CN", // set for website language and date format
+  locale: "zh-CN",
 
   navigators: [
     {
@@ -40,7 +40,7 @@ const YukinaConfig: Configuration = {
       link: "https://github.com/pandyzhou",
     },
   ],
-  maxSidebarCategoryChip: 6, // It is recommended to set it to a common multiple of 2 and 3
+  maxSidebarCategoryChip: 6,
   maxSidebarTagChip: 12,
   maxFooterCategoryChip: 6,
   maxFooterTagChip: 24,
@@ -56,15 +56,14 @@ const YukinaConfig: Configuration = {
     "https://s2.loli.net/2025/01/25/JjpLOW8VSmufzlA.webp",
   ],
 
-  slugMode: "RAW", // 'RAW' | 'HASH' —— Notion 同步脚本会生成安全的 slug，直接用 RAW
+  slugMode: "RAW",
 
   license: {
     name: "CC BY-NC-SA 4.0",
     url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
   },
 
-  // WIP functions
-  bannerStyle: "LOOP", // 'loop' | 'static' | 'hidden'
+  bannerStyle: "LOOP",
 };
 
 export default YukinaConfig;
