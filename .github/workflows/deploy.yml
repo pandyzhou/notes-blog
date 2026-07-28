@@ -1,0 +1,68 @@
+name: 触发博客重新构建
+
+# 两种触发方式：
+#   1. schedule  —— 定时自动跑（不用管）
+#   2. workflow_dispatch —— GitHub 网页上的手动按钮（写完文章想立刻上线时用）
+on:
+  schedule:
+    # cron 用的是 UTC 时间，每 6 小时一次
+    # 对应北京时间：08:00 / 14:00 / 20:00 / 02:00
+    - cron: "0 0,6,12,18 * * *"
+  workflow_dispatch:
+
+# 同一时间只跑一个，避免重复触发构建
+concurrency:
+  group: deploy-hook
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    name: 通知 Cloudflare Pages 拉取最新 Notion 内容
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 检查密钥是否已配置
+        run: |
+          if [ -z "${{ secrets.CF_DEPLOY_HOOK }}" ]; then
+            echo "::error::缺少仓库密钥 CF_DEPLOY_HOOK"
+            echo "请到 Settings → Secrets and variables → Actions 添加，"
+            echo "值为 Cloudflare Pages 里生成的 Deploy Hook URL。"
+            exit 1
+          fi
+
+      - name: 发送部署请求
+        run: |
+          echo "正在触发 Cloudflare Pages 构建..."
+
+          HTTP_CODE=$(curl -s -o response.txt -w "%{http_code}" \
+            -X POST \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
+            "${{ secrets.CF_DEPLOY_HOOK }}")
+
+          echo "HTTP 状态码：$HTTP_CODE"
+          echo "响应内容："
+          cat response.txt
+          echo ""
+
+          if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 201 ]; then
+            echo "::error::触发失败（HTTP $HTTP_CODE）"
+            echo "常见原因："
+            echo "  404 → Deploy Hook 已被删除，或 URL 复制不完整"
+            echo "  403 → URL 错误或已失效，重新生成一个"
+            exit 1
+          fi
+
+          echo "::notice::已成功通知 Cloudflare，构建大约 2 分钟后完成"
+
+      - name: 小结
+        run: |
+          echo "### ✅ 已触发重新构建" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Cloudflare 正在拉取 Notion 里状态为「已发布」的文章。" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 触发方式：\`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 网站地址：https://notes-blog.pages.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- 构建日志：Cloudflare 控制台 → notes-blog → Deployments" >> $GITHUB_STEP_SUMMARY
