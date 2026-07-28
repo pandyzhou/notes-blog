@@ -1,59 +1,58 @@
-# 技术笔记
+# 技术笔记（notes-blog）
 
-Astro + Notion 驱动的静态博客。在 Notion 里写文章，推送后自动构建成静态站点。
+基于 **Astro + Yukina 主题 + Notion** 的个人技术博客。
 
-## 它是怎么工作的
+写作在 Notion，构建时自动把「已发布」的文章拉下来生成静态站，托管在 Cloudflare Pages。
+
+## 整体流程
 
 ```
-Notion 数据库（写作）
-   ↓  构建时通过 Notion API 拉取「已发布」的文章
-Astro（生成静态 HTML）
-   ↓  Git push 触发自动构建
-Cloudflare Pages / EdgeOne（托管）
+Notion 数据库（写完把状态改成「已发布」）
+    ↓ 构建时 scripts/sync-notion.mjs 拉取
+本地 markdown（src/contents/posts/，构建时生成，不提交 git）
+    ↓ astro build（Yukina 主题渲染）
+Cloudflare Pages 静态托管
 ```
 
-## 需要的两个环境变量
+## 日常发布
+
+1. 在 Notion 的「文章」数据库里写
+2. 状态改成「已发布」
+3. 触发重新构建：
+   - 自动：GitHub Actions 每 6 小时一次（`.github/workflows/deploy.yml`）
+   - 手动：仓库 → Actions →「触发博客重新构建」→ Run workflow
+
+## Cloudflare Pages 环境变量
 
 | 变量 | 说明 |
-| --- | --- |
-| `NOTION_TOKEN` | Notion 内部集成的 Token，`ntn_` 开头 |
-| `NOTION_DATA_SOURCE_ID` | 文章数据库的 data source ID |
-| `SITE_URL` | （可选）站点完整网址，用于 sitemap 和 RSS |
+|---|---|
+| `NOTION_TOKEN` | Notion 内部集成 Token |
+| `NOTION_DATABASE_ID` | 文章数据库 ID（32 位） |
+| `NODE_VERSION` | `22` |
 
-⚠️ 不要把 Token 提交到仓库。本地开发放在 `.env`，线上放在平台的环境变量里。
+构建设置：Framework preset `Astro` / Build command `npm run build` / Output `dist`。
 
-## 项目结构
+## 本地开发
 
-```
-src/
-  lib/notion.ts            # 所有 Notion 取数逻辑，列名配置在顶部 PROPS
-  layouts/BaseLayout.astro # 页面外壳、SEO meta、导航
-  components/PostItem.astro# 文章列表项
-  styles/global.css        # 全部样式，支持深色模式
-  pages/
-    index.astro            # 首页文章列表
-    posts/[slug].astro     # 文章详情页
-    tags/index.astro       # 标签总览
-    tags/[tag].astro       # 单标签列表
-    rss.xml.ts             # RSS 订阅
-    404.astro
+```bash
+cp .env.example .env    # 填入自己的值
+export $(grep -v '^#' .env | xargs)
+npm install
+npm run dev             # 先同步 Notion 再启动 dev server
 ```
 
-## 改了 Notion 列名怎么办
+## 站点定制
 
-只改 `src/lib/notion.ts` 顶部的 `PROPS` 对象，其他地方不用动。
+标题 / 头像 / 横幅 / 社交链接 / 许可证：`yukina.config.ts`
+Notion 属性名映射：`scripts/sync-notion.mjs` 顶部的 `PROPS`
 
 ## 已知限制
 
-- **Notion 上传的图片链接只有 1 小时有效期**。文章里插图建议用外部图片链接（如图床、Unsplash），而不是直接拖文件进 Notion。
-- 静态站需要重新构建才能看到新文章。可以在部署平台建一个 Deploy Hook，配定时任务自动重建。
-- 代码块目前没有语法高亮，只做了排版。
-- 数据库块、同步块在 Notion API 里拿不到内容，文章里避免使用。
+- Notion 直接上传的图片 URL 约 1 小时过期 → 正文配图请用外部链接（图床）
+- 文章封面只读取 Notion 页面封面里的「外链图片」；没封面时自动从横幅图里挑一张兜底
+- 「分类」未启用（数据库没有分类属性），侧边栏会自动隐藏分类卡片；标签正常使用
+- 标签里的 `/` 和空格会在同步时替换成 `-`（路由要求）
 
-## 本地开发（可选）
+## 致谢
 
-```bash
-npm install
-cp .env.example .env   # 填入真实值
-npm run dev
-```
+主题：[Yukina](https://github.com/WhitePaper233/yukina)（MIT License）
