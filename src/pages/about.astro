@@ -1,0 +1,29 @@
+---
+import { getEntry, render } from "astro:content";
+import Main from "../layouts/MainLayout.astro";
+import Markdown from "../components/Markdown.astro";
+import I18nKeys from "../locales/keys";
+import { i18n } from "../locales/translation";
+
+const aboutPost = await getEntry("specs", "about");
+const { Content } = await render(aboutPost!);
+---
+
+<Main title={i18n(I18nKeys.nav_bar_about)}>
+  <div class="article-wrapper">
+    <div class="article">
+      <Markdown>
+        <Content />
+      </Markdown>
+    </div>
+  </div>
+</Main>
+
+<style>
+  .article-wrapper {
+    @apply mx-3 w-full rounded-2xl bg-[var(--card-color)] px-5 py-6 lg:mx-0 lg:p-10;
+  }
+  .article {
+    @apply flex flex-col;
+  }
+</style>

@@ -1,51 +1,37 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import PostItem from "../../components/PostItem.astro";
-import { getPublishedPosts, tagSlug, type Post } from "../../lib/notion";
+import PostArchiveLayout from "../../layouts/PostArchiveLayout.astro";
+import I18nKeys from "../../locales/keys";
+import { i18n } from "../../locales/translation";
+import { GetTags, type Archive } from "../../utils/content";
 
 export async function getStaticPaths() {
-  const posts = await getPublishedPosts();
-  const groups = new Map<string, { name: string; posts: Post[] }>();
-
-  for (const post of posts) {
-    for (const tag of post.tags) {
-      const slug = tagSlug(tag);
-      if (!slug) continue;
-      if (!groups.has(slug)) groups.set(slug, { name: tag, posts: [] });
-      groups.get(slug)!.posts.push(post);
-    }
-  }
-
-  return [...groups.entries()].map(([slug, group]) => ({
-    params: { tag: slug },
-    props: { tagName: group.name, posts: group.posts },
+  const tags = await GetTags();
+  const tagList = Array.from(tags.keys());
+  return tagList.map((tag) => ({
+    params: { tag: tag },
   }));
 }
 
-interface Props {
-  tagName: string;
-  posts: Post[];
+const tags = await GetTags();
+const { tag } = Astro.params;
+
+async function FormatArchiveMap() {
+  const posts = tags.get(tag)!.posts;
+  const tagName = tags.get(tag)!.name;
+  const archiveMap = new Map<number, Array<Archive>>();
+  posts.forEach((post) => {
+    const year = post.date.getFullYear();
+    if (archiveMap.has(year)) archiveMap.get(year)!.push(post);
+    else archiveMap.set(year, [post]);
+  });
+  return { archiveMap, tagName };
 }
-const { tagName, posts } = Astro.props;
+
+const { archiveMap, tagName } = await FormatArchiveMap();
 ---
 
-<BaseLayout
-  title={`标签：${tagName}`}
-  description={`关于 ${tagName} 的全部文章`}
->
-  <section class="hero">
-    <div class="wrap">
-      <h1>{tagName}</h1>
-      <p>共 {posts.length} 篇文章。</p>
-    </div>
-  </section>
-
-  <div class="wrap">
-    <ul class="post-list">
-      {posts.map((post) => <PostItem post={post} />)}
-    </ul>
-    <div class="article-foot">
-      <a class="back-link" href="/tags/">← 全部标签</a>
-    </div>
-  </div>
-</BaseLayout>
+<PostArchiveLayout
+  archiveMap={archiveMap}
+  title={tagName}
+  subTitle={i18n(I18nKeys.pages_tags_archive)}
+/>

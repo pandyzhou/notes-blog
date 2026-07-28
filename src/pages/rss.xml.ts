@@ -1,19 +1,20 @@
 import rss from "@astrojs/rss";
-import { getPublishedPosts, SITE } from "../lib/notion";
+import YukinaConfig from "../../yukina.config";
+import { GetSortedPosts } from "../utils/content";
+import { IdToSlug } from "../utils/hash";
 
-export async function GET(context: { site?: URL | string }) {
-  const posts = await getPublishedPosts();
-
+export async function GET(context: { site: string }) {
+  const posts = await GetSortedPosts();
   return rss({
-    title: SITE.title,
-    description: SITE.description,
-    site: context.site ?? "https://example.com",
+    title: YukinaConfig.title,
+    description: YukinaConfig.description,
+    site: context.site,
     items: posts.map((post) => ({
-      title: post.title,
-      description: post.summary,
-      pubDate: post.date ? new Date(post.date) : new Date(),
-      link: `/posts/${post.slug}/`,
+      title: post.data.title,
+      description: post.data.description ?? "",
+      pubDate: post.data.published,
+      link: `/posts/${IdToSlug(post.id)}/`,
     })),
-    customData: "<language>zh-CN</language>",
+    customData: `<language>zh-CN</language>`,
   });
 }

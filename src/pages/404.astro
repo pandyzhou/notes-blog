@@ -1,17 +1,18 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import Main from "../layouts/MainLayout.astro";
 ---
 
-<BaseLayout title="页面不存在">
-  <section class="hero">
-    <div class="wrap">
-      <h1>404</h1>
-      <p>这个页面不存在，或者已经被移走了。</p>
-    </div>
-  </section>
-  <div class="wrap">
-    <div class="empty">
-      <a class="back-link" href="/">← 返回首页</a>
-    </div>
+<Main title="404" subTitle="这个页面不存在">
+  <div
+    class="mx-3 flex flex-col items-center justify-center space-y-4 rounded-2xl bg-[var(--card-color)] px-6 py-16 lg:mx-0"
+  >
+    <p class="text-6xl font-bold text-[var(--primary-color)]">404</p>
+    <p class="text-lg text-[var(--text-color)]">你要找的页面不在这儿</p>
+    <a
+      href="/"
+      class="rounded-lg bg-[var(--primary-color-lighten)] px-5 py-2 text-[var(--primary-color)] transition-all hover:brightness-95"
+    >
+      回首页
+    </a>
   </div>
-</BaseLayout>
+</Main>
