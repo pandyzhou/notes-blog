@@ -45,15 +45,16 @@ const YukinaConfig: Configuration = {
   maxFooterCategoryChip: 6,
   maxFooterTagChip: 24,
 
+  // 本地矢量图，随站点一起部署到 Cloudflare CDN，不依赖外部图床
   banners: [
-    "https://s2.loli.net/2025/01/25/PBvHFjr5yDu6t4a.webp",
-    "https://s2.loli.net/2025/01/25/6bKcwHZigzlM4mJ.webp",
-    "https://s2.loli.net/2025/01/25/H9WgEK6qNTcpFiS.webp",
-    "https://s2.loli.net/2025/01/25/njNVtuUMzxs81RI.webp",
-    "https://s2.loli.net/2025/01/25/tozsJ8QHAjFN3Mm.webp",
-    "https://s2.loli.net/2025/01/25/Pm89OveZq7NWUxF.webp",
-    "https://s2.loli.net/2025/01/25/UCYKvc1ZhgPHB9m.webp",
-    "https://s2.loli.net/2025/01/25/JjpLOW8VSmufzlA.webp",
+    "/banners/1.svg",
+    "/banners/2.svg",
+    "/banners/3.svg",
+    "/banners/4.svg",
+    "/banners/5.svg",
+    "/banners/6.svg",
+    "/banners/7.svg",
+    "/banners/8.svg",
   ],
 
   slugMode: "RAW",
